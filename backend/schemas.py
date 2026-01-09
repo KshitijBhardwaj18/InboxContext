@@ -65,6 +65,7 @@ class AgentResponse(BaseModel):
     reasoning: str
     precedent_count: int
     similar_decisions: List[str]
+    draft_response: Optional[str] = None  # LLM-generated email draft
 
 
 class GraphNodeResponse(BaseModel):
@@ -89,4 +90,3 @@ class GraphEdgeResponse(BaseModel):
 class GraphResponse(BaseModel):
     nodes: List[GraphNodeResponse]
     edges: List[GraphEdgeResponse]
-
