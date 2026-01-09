@@ -3,15 +3,24 @@ from sqlalchemy.orm import Session
 from models import Message, Decision
 from embeddings import get_embedding, cosine_similarity
 from retriever import HybridRetriever
-from typing import List, Tuple
+from llm import get_llm_client
+from prompts import build_email_draft_prompt
+from typing import List, Tuple, Optional
 
 
 class AgentEngine:
     """Simple but deterministic agent that learns from precedent"""
     
-    def __init__(self, db: Session):
+    def __init__(self, db: Session, use_llm: bool = False):
         self.db = db
-        self.retriever = HybridRetriever(db) 
+        self.retriever = HybridRetriever(db)
+        self.use_llm = use_llm
+        if use_llm:
+            try:
+                self.llm = get_llm_client()
+            except Exception as e:
+                print(f"LLM unavailable, will skip draft generation: {e}")
+                self.use_llm = False 
     
     def get_suggestion(self, message: Message) -> dict:
         """Generate action/tone suggestion based on message + precedent"""
@@ -32,13 +41,62 @@ class AgentEngine:
             tone = base_tone
             reasoning = f"No precedent found. Using default logic for {message.sender_type}."
         
-        return {
+        # Generate draft response if LLM is available
+        draft_response = None
+        if self.use_llm:
+            draft_response = self._generate_draft(message, similar_decisions, tone)
+        
+        result = {
             "action": action,
             "tone": tone,
             "reasoning": reasoning,
             "precedent_count": len(similar_decisions),
             "similar_decisions": [d.id for d in similar_decisions]
         }
+        
+        if draft_response:
+            result["draft_response"] = draft_response
+        
+        return result
+    
+    def _generate_draft(
+        self,
+        message: Message,
+        similar_decisions: List[Decision],
+        tone: str
+    ) -> Optional[str]:
+        """Generate email draft using LLM"""
+        try:
+            # Get retrieved context
+            retrieved_context = []
+            for decision in similar_decisions[:3]:
+                retrieved_context.append({
+                    "text": f"Past message: {decision.message.content[:100]}... → Action: {decision.human_action['action']}, Tone: {decision.human_action['tone']}",
+                    "source": "precedent"
+                })
+            
+            # Build prompt
+            system_prompt, user_prompt = build_email_draft_prompt(
+                message_content=message.content,
+                sender_name=message.sender_name,
+                sender_type=message.sender_type,
+                retrieved_context=retrieved_context,
+                tone=tone
+            )
+            
+            # Generate draft
+            draft = self.llm.generate(
+                prompt=user_prompt,
+                system_prompt=system_prompt,
+                temperature=0.7,
+                max_tokens=150
+            )
+            
+            return draft.strip()
+            
+        except Exception as e:
+            print(f"Draft generation error: {e}")
+            return None
     
     def _base_logic(self, message: Message) -> Tuple[str, str]:
         """Default logic without precedent"""
