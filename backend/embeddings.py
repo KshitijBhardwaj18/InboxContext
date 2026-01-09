@@ -1,28 +1,38 @@
 """Embedding service for semantic similarity"""
-from openai import OpenAI
-from config import get_settings
+from sentence_transformers import SentenceTransformer
 import numpy as np
+from functools import lru_cache
 
-settings = get_settings()
-client = OpenAI(api_key=settings.openai_api_key) if settings.openai_api_key else None
+# Load model once and cache it
+@lru_cache(maxsize=1)
+def get_model():
+    """Load and cache the embedding model"""
+    print("Loading sentence-transformers model...")
+    model = SentenceTransformer('all-MiniLM-L6-v2')
+    print("Model loaded successfully!")
+    return model
 
 
 def get_embedding(text: str) -> list[float]:
-    """Get embedding for text using OpenAI API"""
-    if not client:
-        # Return mock embedding if no API key (for demo)
-        return [0.1] * 1536
+    """Get embedding for text using local sentence-transformers model
+    
+    Model: all-MiniLM-L6-v2
+    - Dimensions: 384
+    - Fast inference (~0.01s per text)
+    - Good for semantic search
+    """
+    if not text or not text.strip():
+        # Return zero vector for empty text
+        return [0.0] * 384
     
     try:
-        response = client.embeddings.create(
-            model="text-embedding-3-small",
-            input=text
-        )
-        return response.data[0].embedding
+        model = get_model()
+        embedding = model.encode(text, convert_to_numpy=True)
+        return embedding.tolist()
     except Exception as e:
         print(f"Embedding error: {e}")
-        # Return mock embedding on error
-        return [0.1] * 1536
+        # Return zero vector on error
+        return [0.0] * 384
 
 
 def cosine_similarity(a: list[float], b: list[float]) -> float:
