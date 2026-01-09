@@ -59,6 +59,15 @@ class DecisionTrace(BaseModel):
         from_attributes = True
 
 
+class MessageAnalysis(BaseModel):
+    """Detailed message analysis from LLM"""
+    intent: str
+    topics: List[str]
+    urgency: str
+    requires_action: bool
+    action_description: Optional[str] = None
+
+
 class AgentResponse(BaseModel):
     action: str
     tone: str
@@ -66,6 +75,8 @@ class AgentResponse(BaseModel):
     precedent_count: int
     similar_decisions: List[str]
     draft_response: Optional[str] = None  # LLM-generated email draft
+    message_analysis: Optional[MessageAnalysis] = None  # Deep message analysis
+    context_sources: Optional[List[str]] = None  # Sources of retrieved context
 
 
 class GraphNodeResponse(BaseModel):

@@ -57,13 +57,22 @@ def get_message(message_id: str, db: Session = Depends(get_db)):
 
 
 @app.post("/agent/suggest/{message_id}", response_model=AgentResponse)
-def get_agent_suggestion(message_id: str, db: Session = Depends(get_db)):
-    """Get AI agent suggestion for a message"""
+def get_agent_suggestion(message_id: str, use_llm: bool = True, db: Session = Depends(get_db)):
+    """Get AI agent suggestion for a message
+    
+    Args:
+        message_id: Message ID to analyze
+        use_llm: Use LLM for intelligent reasoning (default: True)
+    
+    Returns:
+        AgentResponse with action, tone, reasoning, and optional draft
+    """
     message = db.query(Message).filter(Message.id == message_id).first()
     if not message:
         raise HTTPException(status_code=404, detail="Message not found")
     
-    agent = AgentEngine(db)
+    # Initialize agent with LLM support
+    agent = AgentEngine(db, use_llm=use_llm)
     suggestion = agent.get_suggestion(message)
     
     return AgentResponse(**suggestion)

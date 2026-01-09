@@ -7,13 +7,16 @@
 ## 🎯 What This Demonstrates
 
 ### Core Features
+
+- ✅ **Intelligent Agent** - LLM-powered reasoning with deep context understanding
+- ✅ **Intent Analysis** - Automatic message intent, urgency, and topic extraction
 - ✅ **Multi-Modal Retrieval** - Vector (semantic) + Keyword (BM25) + Graph (precedent)
-- ✅ **Local LLM Integration** - Ollama/Llama3 for email draft generation
-- ✅ **Cross-Encoder Reranking** - Improve retrieval quality
+- ✅ **Local LLM Integration** - Ollama/Llama3 for reasoning and draft generation
+- ✅ **Cross-Encoder Reranking** - Improve retrieval quality with re-scoring
 - ✅ **Vector Database** - ChromaDB for persistent embeddings
 - ✅ **Local Embeddings** - sentence-transformers (no API required)
-- ✅ **Context Graph** - PostgreSQL graph schema for decisions
-- ✅ **Precedent Learning** - Agent learns from human overrides
+- ✅ **Context Graph** - PostgreSQL graph schema for decision relationships
+- ✅ **Precedent Learning** - Agent learns from human overrides and patterns
 - ✅ **Graph Visualization** - React Flow interactive display
 - ✅ **Production RAG** - Chunking, metadata filtering, hybrid fusion
 
@@ -79,6 +82,7 @@ npm run dev
 ```
 
 **Tech Stack:**
+
 - Frontend: React + Tailwind CSS + React Flow
 - Backend: Python FastAPI
 - Database: PostgreSQL (graph-style schema)
@@ -86,34 +90,79 @@ npm run dev
 
 ## 🎮 How It Works
 
-### 1. First Decision (No Precedent)
+### Intelligent Agent Pipeline
+
 ```
 User clicks message
   ↓
-Agent uses basic heuristics
-  → "investor" = reply_now + neutral tone
+1️⃣ DEEP ANALYSIS (LLM)
+  → Extract intent, topics, urgency
+  → Identify if action required
   ↓
-User overrides to "warm" tone
+2️⃣ HYBRID RETRIEVAL
+  → Semantic search (embeddings)
+  → Keyword search (BM25)
+  → Graph traversal (precedents)
+  → Cross-encoder reranking
   ↓
-Decision captured ✅
+3️⃣ LLM REASONING
+  → Analyze message + context + precedents
+  → Make sophisticated decision
+  → Explain reasoning with references
+  ↓
+4️⃣ DRAFT GENERATION
+  → Generate contextual email draft
+  → Match tone and style
+  ↓
+5️⃣ PRESENT TO USER
+  → Show action, tone, reasoning
+  → Display draft response
+  → User accepts or overrides
+  ↓
+6️⃣ LEARNING
+  → Capture decision trace
+  → Update context graph
+  → Store in vector DB
 ```
 
-### 2. After 3-5 Decisions (Learning Emerges)
+### Example: First Message (No Precedent)
+
 ```
-User clicks another investor message
+📧 Message from Investor: "Can we sync about Q4 metrics?"
   ↓
-Agent checks for similar past decisions
-  → Finds 4 prior investor messages
-  → Human chose "warm" in all 4
+🔍 Analysis: urgent_request, topics: [Q4, metrics, sync]
   ↓
-Agent suggests: reply_now + warm tone
-  → "Based on 4 prior investor messages, 
-     you usually chose 'warm' tone"
+🤖 Agent Decision: reply_now + neutral
+  Reasoning: "Urgent investment inquiry requires immediate attention"
+  Draft: "Happy to sync! I'm available Tuesday or Wednesday..."
   ↓
-User accepts (validates learning!) ✅
+✏️ User Override: reply_now + warm
+  ↓
+✅ Decision captured as precedent
+```
+
+### Example: After Learning (With Precedents)
+
+```
+📧 Another Investor Message: "Following up on our last chat..."
+  ↓
+🔍 Analysis: follow_up, topics: [follow_up, previous discussion]
+  ↓
+📚 Retrieval: Finds 5 similar investor interactions
+  → User always chose "warm" tone
+  → Always replied within same day
+  ↓
+🤖 Agent Decision: reply_now + warm
+  Reasoning: "Based on 5 past investor messages, you consistently
+  reply warmly and promptly. The follow-up nature suggests this
+  is part of an ongoing conversation requiring timely response."
+  Draft: "Thanks for following up! Here's where we are..."
+  ↓
+✅ User accepts (validates learned pattern!)
 ```
 
 ### 3. Context Graph
+
 ```
 Every decision becomes nodes + edges:
   Message → Decision → Action
@@ -132,8 +181,8 @@ Every decision is captured with full context:
 {
   "decision_id": "uuid",
   "message_id": "msg_123",
-  "agent_suggestion": {"action": "reply_now", "tone": "neutral"},
-  "human_action": {"action": "reply_now", "tone": "warm"},
+  "agent_suggestion": { "action": "reply_now", "tone": "neutral" },
+  "human_action": { "action": "reply_now", "tone": "warm" },
   "context_used": {
     "sender_type": "investor",
     "similar_decisions": ["dec_12", "dec_19"]
@@ -146,6 +195,7 @@ Every decision is captured with full context:
 ### Hybrid Retrieval
 
 Combines two strategies:
+
 1. **Semantic Similarity** - Find messages with similar content (embeddings)
 2. **Structured Filtering** - Filter by sender_type (investor/sales/support)
 
@@ -154,6 +204,7 @@ Result: Context-aware precedent that actually makes sense.
 ### Graph Visualization
 
 Interactive graph showing:
+
 - Message nodes (purple)
 - Decision nodes (blue)
 - Action/Tone/SenderType nodes (yellow/orange/green)
@@ -183,12 +234,14 @@ python test_api.py
 ## 📊 Use Cases
 
 This pattern works for:
+
 - **Email management** - Learn reply patterns per sender type
 - **Customer support** - Learn escalation patterns per issue type
 - **Code review** - Learn approval patterns per code smell
 - **Content moderation** - Learn moderation decisions per violation type
 
 Any domain where:
+
 1. AI makes suggestions
 2. Humans make final decisions
 3. Patterns emerge over time
@@ -196,6 +249,7 @@ Any domain where:
 ## 🛠️ Development
 
 ### Backend Development
+
 ```bash
 cd backend
 source venv/bin/activate
@@ -203,12 +257,14 @@ uvicorn main:app --reload  # Auto-reload on changes
 ```
 
 ### Frontend Development
+
 ```bash
 cd frontend
 npm run dev  # Hot module replacement
 ```
 
 ### Database Reset
+
 ```bash
 # Reset decisions only (keep messages)
 curl -X POST http://localhost:8000/reset
@@ -233,12 +289,14 @@ OPENAI_API_KEY=sk-your-key-here
 ## 🎯 Design Philosophy
 
 **Demo-quality, not production-ready:**
+
 - Real working code, not mockups
 - Visible behavior change (the key demo requirement)
 - Simple but correct implementation
 - Prioritize clarity over optimization
 
 **NOT included (intentionally):**
+
 - Authentication/authorization
 - Rate limiting
 - Error recovery
@@ -279,6 +337,7 @@ This is a **working prototype** to demonstrate the concept. It shows the core id
 This is a demonstration project. Feel free to fork and extend!
 
 Ideas for extensions:
+
 - Multi-user support
 - Real Gmail/Slack integration
 - Temporal patterns ("you reply faster on Mondays")
@@ -292,4 +351,3 @@ MIT - Use freely for demos, learning, or as a starting point for your own projec
 ---
 
 Built to demonstrate how **context graphs** can make AI agents genuinely smarter over time. 🚀
-

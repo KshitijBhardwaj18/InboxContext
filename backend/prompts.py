@@ -24,15 +24,24 @@ def build_email_draft_prompt(
         Tuple of (system_prompt, user_prompt)
     """
     
-    # Build system prompt
-    system_prompt = """You are an AI email assistant helping draft professional replies.
+    # Build system prompt with tone-specific guidance
+    tone_guidance = TONE_DESCRIPTIONS.get(tone, "professional")
+    
+    system_prompt = f"""You are an expert AI email assistant that drafts natural, contextually-aware replies.
 
-Guidelines:
-- Keep responses concise (under 100 words)
-- Be natural and conversational
-- Match the requested tone
-- Reference past context when relevant
-- End with a clear next step or call-to-action"""
+Your writing style should be:
+- {tone_guidance}
+- Concise but complete (under 100 words)
+- Natural and human-like, not robotic
+- Context-aware: reference past interactions when relevant
+- Action-oriented: always include a clear next step
+
+Key principles:
+1. Address the sender's main points directly
+2. Use the same communication style as past successful interactions
+3. Be authentic - write as the user would write
+4. Avoid generic templates or overly formal language unless tone is 'formal'
+5. End with a clear call-to-action or next step"""
     
     # Build context section
     context_str = ""
@@ -72,24 +81,30 @@ Draft:"""
 def build_intent_analysis_prompt(
     message_content: str
 ) -> str:
-    """Build prompt for message intent analysis"""
+    """Build prompt for deep message intent analysis"""
     
-    return f"""Analyze this message and extract key information:
+    return f"""Analyze this message deeply and extract ALL key information:
 
 Message:
 {message_content}
 
-Provide:
-1. Primary Intent (e.g., question, request, update, urgent_request, casual_check_in, sales_pitch)
-2. Key Topics (comma-separated keywords)
-3. Urgency Level (low, medium, high, critical)
-4. Action Required (yes/no and what action)
+Analyze and provide:
+1. Primary Intent: Choose the MOST specific from [question, information_request, meeting_request, update, urgent_request, complaint, feedback, casual_check_in, sales_pitch, partnership_proposal, investment_inquiry, support_request, follow_up, introduction]
+2. Key Topics: Extract 3-5 specific keywords or phrases (comma-separated)
+3. Urgency Level: Rate as [low, medium, high, critical] based on language, deadlines, and tone
+4. Action Required: Specify [yes/no] and describe what specific action is needed
 
-Format your response as:
-Intent: [intent]
-Topics: [topics]
-Urgency: [level]
-Action: [yes/no - description]"""
+Be specific and precise. Consider:
+- Explicit requests or questions
+- Implicit urgency signals (deadlines, "asap", "urgent", etc.)
+- Emotional tone and sentiment
+- Business context and importance
+
+Format your response EXACTLY as:
+Intent: [your choice]
+Topics: [topic1, topic2, topic3]
+Urgency: [your choice]
+Action: [yes/no - specific description]"""
 
 
 def build_precedent_summary_prompt(
@@ -157,13 +172,24 @@ Reason:"""
 
 
 # Prompt constants
-DEFAULT_SYSTEM_PROMPT = """You are a helpful AI assistant for inbox management.
-Be concise, professional, and context-aware."""
+DEFAULT_SYSTEM_PROMPT = """You are a highly intelligent AI inbox assistant with deep understanding of context, precedent, and human communication patterns.
+
+Your role:
+- Analyze messages holistically, considering sender importance, urgency, content, and past interactions
+- Learn from precedent: recognize patterns in how the user handles different types of messages
+- Make nuanced decisions that balance urgency, importance, and user preferences
+- Provide clear, actionable reasoning that references specific context
+
+Always consider:
+1. The user's relationship with the sender (past interactions)
+2. The message's true urgency (not just stated urgency)
+3. Patterns in how the user handles similar situations
+4. The broader context and implications of the message"""
 
 TONE_DESCRIPTIONS = {
-    "warm": "friendly, enthusiastic, personal",
-    "neutral": "professional, balanced, straightforward",
-    "formal": "respectful, traditional, structured"
+    "warm": "friendly, enthusiastic, personal, showing genuine interest and care",
+    "neutral": "professional, balanced, straightforward, matter-of-fact",
+    "formal": "respectful, traditional, structured, maintaining clear boundaries"
 }
 
 SENDER_TYPE_CONTEXT = {
