@@ -1,20 +1,21 @@
 # Inbox Context Graph
 
-> A context layer for inbox agents that captures human decision traces and turns them into a precedent-aware context graph.
+> A production-grade RAG-powered context layer for inbox agents with hybrid retrieval, local LLM integration, and precedent-aware learning.
 
-**Demo-quality, real system** demonstrating how AI agents can learn from human decisions to provide increasingly personalized suggestions.
+**Full-stack system** demonstrating advanced retrieval techniques and AI agent learning from human feedback.
 
 ## 🎯 What This Demonstrates
 
-This is a full-stack prototype showing:
-
-- ✅ **AI Agent** that proposes actions (reply/ignore) and tone (neutral/warm/formal)
-- ✅ **Human-in-the-Loop** decision capture with accept/override options
-- ✅ **Precedent-Aware Learning** - agent improves suggestions based on past decisions
-- ✅ **Hybrid Retrieval** - semantic similarity + structured filtering
-- ✅ **Context Graph** - decisions stored as queryable graph structure
-- ✅ **Graph Visualization** - interactive visualization with React Flow
-- ✅ **Before/After Demo** - visible behavior improvement over time
+### Core Features
+- ✅ **Multi-Modal Retrieval** - Vector (semantic) + Keyword (BM25) + Graph (precedent)
+- ✅ **Local LLM Integration** - Ollama/Llama3 for email draft generation
+- ✅ **Cross-Encoder Reranking** - Improve retrieval quality
+- ✅ **Vector Database** - ChromaDB for persistent embeddings
+- ✅ **Local Embeddings** - sentence-transformers (no API required)
+- ✅ **Context Graph** - PostgreSQL graph schema for decisions
+- ✅ **Precedent Learning** - Agent learns from human overrides
+- ✅ **Graph Visualization** - React Flow interactive display
+- ✅ **Production RAG** - Chunking, metadata filtering, hybrid fusion
 
 ## 🚀 Quick Start
 
