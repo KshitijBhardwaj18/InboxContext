@@ -18,6 +18,7 @@ from schemas import (
 )
 from agent import AgentEngine
 from embeddings import get_embedding
+from vector_store import get_vector_store
 
 # Create tables
 Base.metadata.create_all(bind=engine)
@@ -101,6 +102,26 @@ def create_decision(decision_data: DecisionTraceCreate, db: Session = Depends(ge
     
     db.commit()
     db.refresh(decision)
+    
+    # Store decision in vector store for future retrieval
+    try:
+        vector_store = get_vector_store()
+        decision_text = f"Decision for {message.sender_name}: {decision.human_action['action']} with {decision.human_action['tone']} tone. Message: {message.content[:200]}"
+        decision_embedding = get_embedding(decision_text)
+        vector_store.store(
+            id=f"decision_{decision.id}",
+            text=decision_text,
+            embedding=decision_embedding,
+            metadata={
+                "decision_id": decision.id,
+                "message_id": message.id,
+                "sender_type": message.sender_type,
+                "action": decision.human_action["action"],
+                "tone": decision.human_action["tone"]
+            }
+        )
+    except Exception as e:
+        print(f"Failed to store decision in vector store: {e}")
     
     return DecisionTrace(
         decision_id=decision.id,
