@@ -2,6 +2,7 @@
 from sqlalchemy.orm import Session
 from models import Message, Decision
 from embeddings import get_embedding, cosine_similarity
+from retriever import HybridRetriever
 from typing import List, Tuple
 
 
@@ -9,7 +10,8 @@ class AgentEngine:
     """Simple but deterministic agent that learns from precedent"""
     
     def __init__(self, db: Session):
-        self.db = db 
+        self.db = db
+        self.retriever = HybridRetriever(db) 
     
     def get_suggestion(self, message: Message) -> dict:
         """Generate action/tone suggestion based on message + precedent"""
@@ -57,35 +59,40 @@ class AgentEngine:
             return "reply_later", "neutral"
     
     def _hybrid_retrieval(self, message: Message, limit: int = 5) -> List[Decision]:
-        """Hybrid retrieval: semantic + structured filtering"""
+        """Hybrid retrieval using new multi-strategy retriever"""
         
-        # Get message embedding
-        message_embedding = message.embedding
-        if not message_embedding:
-            # Generate if not exists
-            message_embedding = get_embedding(message.content)
+        # Use the unified hybrid retriever
+        query = f"{message.subject or ''} {message.content}"
         
-        # Get all decisions for same sender_type
+        results = self.retriever.retrieve(
+            query=query,
+            sender_type=message.sender_type,
+            top_k=limit,
+            use_vector=True,
+            use_keyword=True,
+            use_graph=True,
+            rerank=True
+        )
+        
+        # Extract decision IDs from results
+        decision_ids = []
+        for result in results:
+            if result["source"] == "graph":
+                decision_id = result["metadata"].get("decision_id")
+                if decision_id:
+                    decision_ids.append(decision_id)
+        
+        # Get Decision objects
+        if not decision_ids:
+            return []
+        
         decisions = (
             self.db.query(Decision)
-            .join(Message)
-            .filter(Message.sender_type == message.sender_type)
+            .filter(Decision.id.in_(decision_ids))
             .all()
         )
         
-        if not decisions:
-            return []
-        
-        # Calculate semantic similarity
-        similarities = []
-        for decision in decisions:
-            if decision.message.embedding:
-                similarity = cosine_similarity(message_embedding, decision.message.embedding)
-                similarities.append((decision, similarity))
-        
-        # Sort by similarity and take top matches
-        similarities.sort(key=lambda x: x[1], reverse=True)
-        return [d for d, _ in similarities[:limit]]
+        return decisions
     
     def _apply_precedent(
         self, 
@@ -120,4 +127,3 @@ class AgentEngine:
         )
         
         return most_common_action, most_common_tone, reasoning
-
