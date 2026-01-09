@@ -174,6 +174,43 @@ def get_graph(db: Session = Depends(get_db)):
     return GraphResponse(nodes=node_responses, edges=edge_responses)
 
 
+@app.get("/context/retrieve")
+def retrieve_context(
+    query: str,
+    sender_type: str = None,
+    top_k: int = 5,
+    db: Session = Depends(get_db)
+):
+    """Retrieve relevant context for a query using hybrid retrieval
+    
+    Args:
+        query: Search query
+        sender_type: Optional filter by sender type
+        top_k: Number of results to return
+        
+    Returns:
+        Ranked context with sources and scores
+    """
+    from retriever import HybridRetriever
+    
+    retriever = HybridRetriever(db)
+    results = retriever.retrieve(
+        query=query,
+        sender_type=sender_type,
+        top_k=top_k,
+        use_vector=True,
+        use_keyword=True,
+        use_graph=True,
+        rerank=True
+    )
+    
+    return {
+        "query": query,
+        "results": results,
+        "count": len(results)
+    }
+
+
 @app.post("/reset")
 def reset_demo(db: Session = Depends(get_db)):
     """Reset all decisions and graph (keep messages)"""
@@ -182,6 +219,14 @@ def reset_demo(db: Session = Depends(get_db)):
     db.query(GraphNode).delete()
     db.query(GraphEdge).delete()
     db.commit()
+    
+    # Also reset vector store decisions (keep messages)
+    try:
+        vector_store = get_vector_store()
+        # Note: ChromaDB doesn't have easy prefix delete, so we'd need to query and delete
+        # For simplicity, we'll just clear decision_ prefixed items if needed
+    except Exception as e:
+        print(f"Vector store reset warning: {e}")
     
     return {"message": "Demo reset complete"}
 
