@@ -146,6 +146,16 @@ const MessageDetail = ({ message, onDecisionComplete }) => {
                     {suggestion.precedent_count !== 1 ? "s" : ""}
                   </div>
                 )}
+                {suggestion.draft_response && (
+                  <div className="mt-3 pt-3 border-t border-blue-200">
+                    <div className="text-xs font-medium text-blue-900 mb-1">
+                      📝 AI Draft:
+                    </div>
+                    <div className="text-sm text-blue-800 bg-white p-2 rounded border border-blue-100 italic">
+                      "{suggestion.draft_response}"
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
