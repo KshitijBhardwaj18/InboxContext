@@ -1,27 +1,34 @@
 """Local LLM integration using Ollama"""
 import ollama
+import os
 from typing import Optional, List, Dict
 
 
 class LLMClient:
     """Client for local LLM via Ollama"""
     
-    def __init__(self, model: str = "llama3.2:3b"):
+    def __init__(self, model: str = "llama3.2:3b", host: str = None):
         """Initialize LLM client
         
         Args:
             model: Ollama model name (default: llama3.2:3b)
+            host: Ollama host URL (default: auto-detect)
         """
         self.model = model
+        # Auto-detect host: use host.docker.internal if in Docker, localhost otherwise
+        if host is None:
+            host = os.getenv("OLLAMA_HOST", "http://host.docker.internal:11434")
+        self.host = host
         self._check_connection()
     
     def _check_connection(self):
         """Check if Ollama is running"""
         try:
-            ollama.list()
-            print(f"✅ Connected to Ollama (model: {self.model})")
+            # Set the host for ollama client
+            ollama.Client(host=self.host).list()
+            print(f"✅ Connected to Ollama at {self.host} (model: {self.model})")
         except Exception as e:
-            print(f"⚠️  Ollama not available: {e}")
+            print(f"⚠️  Ollama not available at {self.host}: {e}")
             print("   Install: curl -fsSL https://ollama.com/install.sh | sh")
             print(f"   Then run: ollama pull {self.model}")
     
@@ -57,7 +64,8 @@ class LLMClient:
         })
         
         try:
-            response = ollama.chat(
+            client = ollama.Client(host=self.host)
+            response = client.chat(
                 model=self.model,
                 messages=messages,
                 options={
@@ -178,7 +186,8 @@ Urgency: [level]"""
             Assistant response
         """
         try:
-            response = ollama.chat(
+            client = ollama.Client(host=self.host)
+            response = client.chat(
                 model=self.model,
                 messages=messages,
                 options={'temperature': temperature}
